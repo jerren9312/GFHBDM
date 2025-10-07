@@ -9,16 +9,15 @@
   </style>
 </head>
 <body>
-  <script src="https://antimatter15.com/splat/splat.js"></script>
+  <!-- include js -->
+  <script src="main.js"></script>
   <script>
     // viewer
     const viewer = new SPLAT.Viewer();
     document.body.appendChild(viewer.renderer.domElement);
 
-    //load
     viewer.loadSplat("model1.splat");
 
-    // ana
     function animate() {
       requestAnimationFrame(animate);
       viewer.render();
