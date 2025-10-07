@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grand Forks Historic Building Museum</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      background: #000;
+      color: white;
+    }
+    
+    /* 全屏3D背景 */
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+      touch-action: none;
+    }
+    
+    /* 顶部导航栏 */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 30px 50px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .nav-buttons {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 25px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+    
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    /* 中央信息卡片 */
+    .info-card {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 30px;
+      padding: 50px 60px;
+      max-width: 600px;
+      z-index: 50;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      animation: fadeInUp 0.8s ease;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+    
+    .building-number {
+      font-size: 16px;
+      letter-spacing: 3px;
+      color: #ffd89b;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .building-title {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, #fff 0%, #ffd89b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    
+    .building-year {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 25px;
+      font-style: italic;
+    }
+    
+    .building-description {
+      font-size: 16px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 35px;
+    }
+    
+    .explore-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .explore-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+    }
+    
+    /* 左右切换按钮 */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 70px;
+      height: 70px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 60;
+      transition: all 0.3s ease;
+      font-size: 28px;
+    }
+    
+    .nav-arrow:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-50%) scale(1.1);
+    }
+    
+    .nav-arrow.left {
+      left: 40px;
+    }
+    
+    .nav-arrow.right {
+      right: 40px;
+    }
+    
+    /* 底部进度指示器 */
+    .progress-dots {
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    
+    .dot.active {
+      background: white;
+      transform: scale(1.3);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    }
+    
+    .dot:hover {
+      background: rgba(255, 255, 255, 0.6);
+    }
+    
+    /* 控制说明 */
+    .controls-hint {
+      position: fixed;
+      bottom: 100px;
+      left: 50px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 20px 25px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      font-size: 14px;
+      line-height: 1.8;
+      display: none;
+    }
+    
+    .controls-hint h4 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #ffd89b;
+    }
+    
+    .controls-hint p {
+      color: rgba(255, 255, 255, 0.8);
+      margin: 5px 0;
+    }
+    
+    /* FPS计数器 */
+    #fps {
+      position: fixed;
+      top: 30px;
+      right: 50px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      color: #51cf66;
+      z-index: 100;
+    }
+    
+    /* 加载动画 */
+    #spinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 200;
+    }
+    
+    .spinner-ring {
+      width: 80px;
+      height: 80px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #ffd89b;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #message {
+      color: white;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    #progress {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      z-index: 200;
+      transition: width 0.3s ease;
+    }
+    
+    #camid {
+      display: none;
+    }
+    
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .top-nav {
+        padding: 20px 25px;
+      }
+      
+      .logo {
+        font-size: 18px;
+      }
+      
+      .info-card {
+        padding: 30px 35px;
+        max-width: 90%;
+      }
+      
+      .building-title {
+        font-size: 32px;
+      }
+      
+      .nav-arrow {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+      
+      .nav-arrow.left {
+        left: 20px;
+      }
+      
+      .nav-arrow.right {
+        right: 20px;
+      }
+      
+      .controls-hint {
+        display: none;
+      }
+    }
+    
+    /* 淡入淡出动画 */
+    .fade-out {
+      animation: fadeOut 0.5s ease forwards;
+    }
+    
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+      }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 全屏3D画布 - 使用原来main.js期望的ID -->
+  <canvas id="canvas"></canvas>
+  
+  <!-- 顶部导航 -->
+  <div class="top-nav">
+    <div class="logo">GF Museum</div>
+    <div class="nav-buttons">
+      <button class="nav-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
+      <button class="nav-btn" onclick="showInfo()">ℹ️ Info</button>
+    </div>
+  </div>
+  
+  <!-- FPS计数器 -->
+  <div id="fps">-- fps</div>
+  
+  <!-- 隐藏的camid元素（main.js可能需要） -->
+  <div id="camid"></div>
+  
+  <!-- 中央信息卡片 -->
+  <div class="info-card" id="info-card">
+    <div class="building-number" id="building-number">BUILDING 01/06</div>
+    <h1 class="building-title" id="building-title">Historic Building 1</h1>
+    <div class="building-year" id="building-year">Est. 1890s</div>
+    <p class="building-description" id="building-description">
+      A remarkable example of late 19th-century architecture, featuring classic Victorian design elements.
+    </p>
+    <button class="explore-button" onclick="hideInfoCard()">
+      🔍 Explore in 3D
+    </button>
+  </div>
+  
+  <!-- 左右切换按钮 -->
+  <div class="nav-arrow left" onclick="previousBuilding()">‹</div>
+  <div class="nav-arrow right" onclick="nextBuilding()">›</div>
+  
+  <!-- 底部进度点 -->
+  <div class="progress-dots" id="progress-dots"></div>
+  
+  <!-- 控制说明 -->
+  <div class="controls-hint">
+    <h4>🎮 Controls</h4>
+    <p><strong>Mouse Drag:</strong> Rotate view</p>
+    <p><strong>Right Click:</strong> Pan camera</p>
+    <p><strong>Scroll:</strong> Zoom</p>
+    <p><strong>← →:</strong> Switch buildings</p>
+  </div>
+  
+  <!-- 加载动画 -->
+  <div id="spinner">
+    <div class="spinner-ring"></div>
+    <p id="message">Loading 3D Model...</p>
+  </div>
+  
+  <!-- 进度条 -->
+  <div id="progress" style="width: 0%;"></div>
+
+  <script>
+    // 建筑数据
+    const buildings = [
+      {
+        model: 'model1.splat',
+        name: 'Historic Building 1',
+        year: 'Est. 1890s',
+        description: 'A remarkable example of late 19th-century architecture, featuring classic Victorian design elements.'
+      },
+      {
+        model: 'model2.splat',
+        name: 'Historic Building 2',
+        year: 'Est. 1900s',
+        description: 'An important commercial structure that shaped the early downtown development.'
+      },
+      {
+        model: 'model3.splat',
+        name: 'Historic Building 3',
+        year: 'Est. 1910s',
+        description: 'A beautiful example of early 20th-century civic architecture with neoclassical influences.'
+      },
+      {
+        model: 'model4.splat',
+        name: 'Historic Building 4',
+        year: 'Est. 1920s',
+        description: 'Art Deco masterpiece showcasing the prosperity and optimism of the Jazz Age.'
+      },
+      {
+        model: 'model5.splat',
+        name: 'Historic Building 5',
+        year: 'Est. 1930s',
+        description: 'Depression-era construction demonstrating resilient community spirit and craftsmanship.'
+      },
+      {
+        model: 'model6.splat',
+        name: 'Historic Building 6',
+        year: 'Est. 1940s',
+        description: 'Post-war modernist structure representing Grand Forks\' mid-century development.'
+      }
+    ];
+    
+    let currentIndex = 0;
+    let infoCardVisible = true;
+    
+    // 初始化进度点
+    function initProgressDots() {
+      const dotsContainer = document.getElementById('progress-dots');
+      buildings.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        if (index === 0) dot.classList.add('active');
+        dot.onclick = () => switchToBuilding(index);
+        dotsContainer.appendChild(dot);
+      });
+    }
+    
+    // 更新信息卡片
+    function updateInfoCard() {
+      const building = buildings[currentIndex];
+      document.getElementById('building-number').textContent = `BUILDING ${String(currentIndex + 1).padStart(2, '0')}/${String(buildings.length).padStart(2, '0')}`;
+      document.getElementById('building-title').textContent = building.name;
+      document.getElementById('building-year').textContent = building.year;
+      document.getElementById('building-description').textContent = building.description;
+      
+      // 更新进度点
+      document.querySelectorAll('.dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentIndex);
+      });
+    }
+    
+    // 切换到指定建筑
+    function switchToBuilding(index) {
+      if (index === currentIndex) return;
+      currentIndex = index;
+      const building = buildings[currentIndex];
+      
+      // 更新URL参数并重新加载
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('url', building.model);
+      window.location.href = newUrl.toString();
+    }
+    
+    // 上一个建筑
+    function previousBuilding() {
+      const newIndex = (currentIndex - 1 + buildings.length) % buildings.length;
+      switchToBuilding(newIndex);
+    }
+    
+    // 下一个建筑
+    function nextBuilding() {
+      const newIndex = (currentIndex + 1) % buildings.length;
+      switchToBuilding(newIndex);
+    }
+    
+    // 隐藏信息卡片
+    function hideInfoCard() {
+      const card = document.getElementById('info-card');
+      card.classList.add('fade-out');
+      setTimeout(() => {
+        card.style.display = 'none';
+        infoCardVisible = false;
+      }, 500);
+    }
+    
+    // 显示信息
+    function showInfo() {
+      const card = document.getElementById('info-card');
+      if (infoCardVisible) {
+        hideInfoCard();
+      } else {
+        card.style.display = 'block';
+        card.classList.remove('fade-out');
+        card.classList.add('fade-in');
+        infoCardVisible = true;
+      }
+    }
+    
+    // 全屏切换
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        previousBuilding();
+      } else if (e.key === 'ArrowRight') {
+        nextBuilding();
+      } else if (e.key === 'i' || e.key === 'I') {
+        showInfo();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    });
+    
+    // 初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      initProgressDots();
+      
+      // 检查URL参数，确定当前显示哪个建筑
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentModel = urlParams.get('url');
+      
+      if (currentModel) {
+        const index = buildings.findIndex(b => b.model === currentModel);
+        if (index !== -1) {
+          currentIndex = index;
+        }
+      } else {
+        // 如果没有URL参数，加载第一个建筑
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('url', buildings[0].model);
+        window.history.replaceState({}, '', newUrl);
+      }
+      
+      updateInfoCard();
+      
+      // 5秒后自动隐藏信息卡片
+      setTimeout(() => {
+        if (infoCardVisible) {
+          hideInfoCard();
+        }
+      }, 5000);
+    });
+  </script>
+  
+  <!-- 加载main.js - 放在最后以确保DOM已准备好 -->
+  <script src="main.js"></script>
+</body>
+</html>
