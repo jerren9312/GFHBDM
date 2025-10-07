@@ -19,13 +19,15 @@
     }
     
     /* 全屏3D背景 */
-    #canvas {
+    canvas {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: 1;
+      display: block;
+      touch-action: none;
     }
     
     /* 顶部导航栏 */
@@ -269,11 +271,6 @@
       transform: translate(-50%, -50%);
       text-align: center;
       z-index: 200;
-      display: none;
-    }
-    
-    #spinner.active {
-      display: block;
     }
     
     .spinner-ring {
@@ -297,7 +294,7 @@
       font-weight: 500;
     }
     
-    #progress-bar {
+    #progress {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -305,6 +302,10 @@
       background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
       z-index: 200;
       transition: width 0.3s ease;
+    }
+    
+    #camid {
+      display: none;
     }
     
     /* 响应式 */
@@ -371,7 +372,7 @@
   </style>
 </head>
 <body>
-  <!-- 全屏3D画布 -->
+  <!-- 全屏3D画布 - 使用原来main.js期望的ID -->
   <canvas id="canvas"></canvas>
   
   <!-- 顶部导航 -->
@@ -385,6 +386,9 @@
   
   <!-- FPS计数器 -->
   <div id="fps">-- fps</div>
+  
+  <!-- 隐藏的camid元素（main.js可能需要） -->
+  <div id="camid"></div>
   
   <!-- 中央信息卡片 -->
   <div class="info-card" id="info-card">
@@ -421,18 +425,10 @@
     <p id="message">Loading 3D Model...</p>
   </div>
   
-  <div id="progress-bar" style="width: 0%;"></div>
+  <!-- 进度条 -->
+  <div id="progress" style="width: 0%;"></div>
 
   <script>
-    // 确保main.js能够找到正确的元素
-    window.viewerElements = {
-      canvas: document.getElementById('canvas'),
-      spinner: document.getElementById('spinner'),
-      message: document.getElementById('message'),
-      progress: document.getElementById('progress-bar'),
-      fps: document.getElementById('fps')
-    };
-    
     // 建筑数据
     const buildings = [
       {
@@ -584,33 +580,25 @@
         if (index !== -1) {
           currentIndex = index;
         }
-        // 显示加载动画
-        document.getElementById('spinner').classList.add('active');
       } else {
         // 如果没有URL参数，加载第一个建筑
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('url', buildings[0].model);
         window.history.replaceState({}, '', newUrl);
-        document.getElementById('spinner').classList.add('active');
       }
       
       updateInfoCard();
       
-      // 3秒后自动隐藏信息卡片（等模型加载完成后）
+      // 5秒后自动隐藏信息卡片
       setTimeout(() => {
         if (infoCardVisible) {
           hideInfoCard();
         }
       }, 5000);
     });
-    
-    // 监听模型加载完成事件（如果main.js触发的话）
-    window.addEventListener('modelLoaded', () => {
-      const spinner = document.getElementById('spinner');
-      spinner.classList.remove('active');
-    });
   </script>
   
+  <!-- 加载main.js - 放在最后以确保DOM已准备好 -->
   <script src="main.js"></script>
 </body>
 </html>
