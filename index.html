@@ -269,6 +269,11 @@
       transform: translate(-50%, -50%);
       text-align: center;
       z-index: 200;
+      display: none;
+    }
+    
+    #spinner.active {
+      display: block;
     }
     
     .spinner-ring {
@@ -419,6 +424,15 @@
   <div id="progress-bar" style="width: 0%;"></div>
 
   <script>
+    // 确保main.js能够找到正确的元素
+    window.viewerElements = {
+      canvas: document.getElementById('canvas'),
+      spinner: document.getElementById('spinner'),
+      message: document.getElementById('message'),
+      progress: document.getElementById('progress-bar'),
+      fps: document.getElementById('fps')
+    };
+    
     // 建筑数据
     const buildings = [
       {
@@ -570,21 +584,30 @@
         if (index !== -1) {
           currentIndex = index;
         }
+        // 显示加载动画
+        document.getElementById('spinner').classList.add('active');
       } else {
         // 如果没有URL参数，加载第一个建筑
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('url', buildings[0].model);
         window.history.replaceState({}, '', newUrl);
+        document.getElementById('spinner').classList.add('active');
       }
       
       updateInfoCard();
       
-      // 3秒后自动隐藏信息卡片
+      // 3秒后自动隐藏信息卡片（等模型加载完成后）
       setTimeout(() => {
         if (infoCardVisible) {
           hideInfoCard();
         }
       }, 5000);
+    });
+    
+    // 监听模型加载完成事件（如果main.js触发的话）
+    window.addEventListener('modelLoaded', () => {
+      const spinner = document.getElementById('spinner');
+      spinner.classList.remove('active');
     });
   </script>
   
