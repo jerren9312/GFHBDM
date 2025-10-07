@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Gaussian Splatting Gallery</title>
+  <title>3D Gaussian Splatting Viewer</title>
   <style>
     * {
       margin: 0;
@@ -15,127 +15,106 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-    
-    #gallery {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 60px 20px;
-    }
-    
-    .gallery-header {
-      text-align: center;
-      margin-bottom: 50px;
-      color: white;
-    }
-    
-    .gallery-header h1 {
-      font-size: 48px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    
-    .gallery-header p {
-      font-size: 18px;
-      opacity: 0.9;
-    }
-    
-    .status-message {
-      text-align: center;
-      color: white;
-      background: rgba(0,0,0,0.3);
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-      font-size: 14px;
-    }
-    
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 30px;
-      padding: 20px;
-    }
-    
-    @media (max-width: 1024px) {
-      .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    
-    @media (max-width: 640px) {
-      .gallery-grid {
-        grid-template-columns: 1fr;
-      }
-      .gallery-header h1 {
-        font-size: 32px;
-      }
-    }
-    
-    .gallery-item {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    
-    .gallery-item:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    }
-    
-    .gallery-item-thumb {
-      width: 100%;
-      height: 280px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .gallery-item-thumb::before {
-      content: '3D';
-      font-size: 72px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.2);
-      position: absolute;
-    }
-    
-    .gallery-item-info {
       padding: 20px;
     }
     
-    .gallery-item-title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    
+    h1 {
       color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 32px;
     }
     
-    .gallery-item-desc {
-      font-size: 14px;
+    .subtitle {
       color: #718096;
-      line-height: 1.5;
+      margin-bottom: 30px;
+      font-size: 16px;
     }
     
-    .view-badge {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(255,255,255,0.95);
+    .debug-info {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: left;
+      font-size: 14px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .debug-info h3 {
+      color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .debug-line {
+      padding: 5px 0;
+      border-bottom: 1px solid #e2e8f0;
+      color: #4a5568;
+    }
+    
+    .debug-line:last-child {
+      border-bottom: none;
+    }
+    
+    .status {
+      display: inline-block;
       padding: 8px 16px;
       border-radius: 20px;
-      font-size: 13px;
       font-weight: 600;
-      color: #667eea;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin: 10px 0;
+    }
+    
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    #view-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-top: 20px;
+    }
+    
+    #view-button:hover {
+      transform: scale(1.05);
+    }
+    
+    #view-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     
     #viewer {
@@ -179,15 +158,14 @@
     }
     
     #viewer-controls h3 {
-      font-size: 20px;
-      margin-bottom: 15px;
+      font-size: 18px;
+      margin-bottom: 12px;
     }
     
     #viewer-controls p {
       font-size: 14px;
-      margin: 8px 0;
+      margin: 6px 0;
       opacity: 0.9;
-      line-height: 1.6;
     }
     
     #back-button {
@@ -204,7 +182,6 @@
       cursor: pointer;
       z-index: 10;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     
     #back-button:hover {
@@ -239,84 +216,25 @@
   </style>
 </head>
 <body>
-  <div id="gallery">
-    <div class="gallery-header">
-      <h1>3D Gaussian Splatting Gallery</h1>
-      <p>Explore interactive 3D models</p>
+  <div class="container">
+    <h1>3D Model Viewer</h1>
+    <p class="subtitle">Testing model1.splat</p>
+    
+    <div id="status-badge" class="status loading">Checking...</div>
+    
+    <div class="debug-info">
+      <h3>Debug Information</h3>
+      <div id="debug-log"></div>
     </div>
     
-    <div id="status" class="status-message">
-      Loading viewer library...
-    </div>
-    
-    <div class="gallery-grid">
-      <div class="gallery-item" data-model="model1.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 1</div>
-          <div class="gallery-item-desc">Beautiful 3D scene with Gaussian Splatting</div>
-        </div>
-      </div>
-      
-      <div class="gallery-item" data-model="model2.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 2</div>
-          <div class="gallery-item-desc">Photorealistic rendering</div>
-        </div>
-      </div>
-      
-      <div class="gallery-item" data-model="model3.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 3</div>
-          <div class="gallery-item-desc">High-quality 3D reconstruction</div>
-        </div>
-      </div>
-      
-      <div class="gallery-item" data-model="model4.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 4</div>
-          <div class="gallery-item-desc">Real-time visualization</div>
-        </div>
-      </div>
-      
-      <div class="gallery-item" data-model="model5.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 5</div>
-          <div class="gallery-item-desc">Advanced lighting effects</div>
-        </div>
-      </div>
-      
-      <div class="gallery-item" data-model="model6.splat">
-        <div class="gallery-item-thumb">
-          <div class="view-badge">View 3D</div>
-        </div>
-        <div class="gallery-item-info">
-          <div class="gallery-item-title">Scene 6</div>
-          <div class="gallery-item-desc">Environmental reconstruction</div>
-        </div>
-      </div>
-    </div>
+    <button id="view-button" disabled>View 3D Model</button>
   </div>
 
   <div id="viewer">
-    <button id="back-button">← Back to Gallery</button>
+    <button id="back-button">← Back</button>
     
     <div id="viewer-controls">
-      <h3>Controls</h3>
+      <h3>🎮 Controls</h3>
       <p><strong>Left Click + Drag:</strong> Rotate</p>
       <p><strong>Right Click + Drag:</strong> Pan</p>
       <p><strong>Scroll:</strong> Zoom</p>
@@ -331,51 +249,91 @@
   </div>
 
   <script>
-    console.log('Page loaded, initializing...');
-    
-    const statusDiv = document.getElementById('status');
-    const gallery = document.getElementById('gallery');
+    const debugLog = document.getElementById('debug-log');
+    const statusBadge = document.getElementById('status-badge');
+    const viewButton = document.getElementById('view-button');
     const viewer = document.getElementById('viewer');
     const viewerCanvas = document.getElementById('viewer-canvas');
     const backButton = document.getElementById('back-button');
     const loading = document.getElementById('loading');
-    const galleryItems = document.querySelectorAll('.gallery-item');
     
     let splatViewer = null;
     let animationId = null;
     
-    // Check if SPLAT library is loaded
+    function addDebugLine(message, type = 'info') {
+      const line = document.createElement('div');
+      line.className = 'debug-line';
+      const timestamp = new Date().toLocaleTimeString();
+      line.textContent = `[${timestamp}] ${message}`;
+      if (type === 'error') line.style.color = '#e53e3e';
+      if (type === 'success') line.style.color = '#38a169';
+      debugLog.appendChild(line);
+      debugLog.scrollTop = debugLog.scrollHeight;
+      console.log(message);
+    }
+    
+    addDebugLine('Page loaded');
+    addDebugLine('Current URL: ' + window.location.href);
+    
+    // Check library
     function checkLibrary() {
+      addDebugLine('Checking SPLAT library...');
       if (typeof SPLAT !== 'undefined') {
-        statusDiv.innerHTML = '✓ Viewer ready! Click any scene to view in 3D';
-        statusDiv.style.background = 'rgba(46, 213, 115, 0.3)';
-        console.log('SPLAT library loaded successfully');
+        addDebugLine('✓ SPLAT library loaded successfully', 'success');
+        statusBadge.textContent = '✓ Ready';
+        statusBadge.className = 'status success';
         return true;
       } else {
-        statusDiv.innerHTML = '✗ Error: SPLAT library failed to load. Please refresh the page.';
-        statusDiv.style.background = 'rgba(235, 87, 87, 0.3)';
-        console.error('SPLAT library not found');
+        addDebugLine('✗ SPLAT library not found', 'error');
+        statusBadge.textContent = '✗ Library Error';
+        statusBadge.className = 'status error';
         return false;
       }
     }
     
-    // Initialize gallery
-    function initGallery() {
-      galleryItems.forEach(item => {
-        item.addEventListener('click', function() {
-          if (!checkLibrary()) {
-            alert('3D viewer library is not loaded. Please refresh the page.');
-            return;
-          }
-          const modelPath = this.dataset.model;
-          openViewer(modelPath);
-        });
-      });
+    // Check file
+    async function checkFile() {
+      addDebugLine('Checking model1.splat...');
+      try {
+        const response = await fetch('model1.splat', { method: 'HEAD' });
+        if (response.ok) {
+          const size = response.headers.get('content-length');
+          addDebugLine(`✓ model1.splat found (${size ? Math.round(size/1024/1024*100)/100 + ' MB' : 'size unknown'})`, 'success');
+          return true;
+        } else {
+          addDebugLine(`✗ model1.splat not found (Status: ${response.status})`, 'error');
+          addDebugLine('Make sure model1.splat is in the same folder as index.html', 'error');
+          return false;
+        }
+      } catch (error) {
+        addDebugLine('✗ Cannot access model1.splat: ' + error.message, 'error');
+        return false;
+      }
     }
     
-    function openViewer(modelPath) {
-      console.log('Opening viewer for:', modelPath);
-      gallery.style.display = 'none';
+    // Initialize
+    async function initialize() {
+      const libOk = checkLibrary();
+      if (!libOk) {
+        addDebugLine('Waiting for library to load...');
+        setTimeout(initialize, 500);
+        return;
+      }
+      
+      const fileOk = await checkFile();
+      
+      if (libOk && fileOk) {
+        viewButton.disabled = false;
+        addDebugLine('✓ All checks passed! Ready to view', 'success');
+      } else {
+        addDebugLine('Please fix the errors above', 'error');
+      }
+    }
+    
+    // View button
+    viewButton.addEventListener('click', function() {
+      addDebugLine('Opening 3D viewer...');
+      document.querySelector('.container').style.display = 'none';
       viewer.classList.add('active');
       loading.style.display = 'block';
       
@@ -389,6 +347,8 @@
             fps: 60
           });
           
+          addDebugLine('Viewer initialized');
+          
           function animate() {
             if (viewer.classList.contains('active')) {
               animationId = requestAnimationFrame(animate);
@@ -399,32 +359,27 @@
           animate();
         }
         
-        splatViewer.loadFile(modelPath)
+        addDebugLine('Loading model1.splat...');
+        splatViewer.loadFile('model1.splat')
           .then(() => {
             loading.style.display = 'none';
-            console.log('Model loaded successfully:', modelPath);
+            addDebugLine('✓ Model loaded successfully!', 'success');
           })
           .catch(error => {
-            console.error('Error loading model:', error);
-            loading.innerHTML = '<p style="color: #ff6b6b; font-size: 16px;">Error: Could not load ' + modelPath + '<br><br>Please check:<br>1. File exists in repository<br>2. File name is correct<br>3. File is a valid .splat format</p>';
+            addDebugLine('✗ Failed to load model: ' + error.message, 'error');
+            loading.innerHTML = '<p style="color: #ff6b6b; font-size: 16px;">Error loading model<br><br>' + error.message + '</p>';
           });
       } catch (error) {
-        console.error('Error initializing viewer:', error);
-        loading.innerHTML = '<p style="color: #ff6b6b;">Error initializing viewer: ' + error.message + '</p>';
-      }
-    }
-    
-    backButton.addEventListener('click', function() {
-      viewer.classList.remove('active');
-      gallery.style.display = 'block';
-      if (animationId) {
-        cancelAnimationFrame(animationId);
+        addDebugLine('✗ Viewer error: ' + error.message, 'error');
+        loading.innerHTML = '<p style="color: #ff6b6b;">Error: ' + error.message + '</p>';
       }
     });
     
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && viewer.classList.contains('active')) {
-        backButton.click();
+    backButton.addEventListener('click', function() {
+      viewer.classList.remove('active');
+      document.querySelector('.container').style.display = 'block';
+      if (animationId) {
+        cancelAnimationFrame(animationId);
       }
     });
     
@@ -434,14 +389,10 @@
       }
     });
     
-    // Wait for library to load
-    setTimeout(function() {
-      if (checkLibrary()) {
-        initGallery();
-      }
-    }, 1000);
+    // Start checking
+    setTimeout(initialize, 1000);
   </script>
   
-  <script src="https://cdn.jsdelivr.net/npm/@antimatter15/splat@latest/build/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@antimatter15/splat@latest/build/main.js" onerror="console.error('Failed to load SPLAT library from CDN')"></script>
 </body>
 </html>
