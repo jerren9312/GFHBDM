@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grand Forks Historic Building Digital Museum</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: #f5f1e8;
+      color: #2c2416;
+      line-height: 1.6;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+      color: white;
+      padding: 60px 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/><path d="M50,0 L50,100 M0,50 L100,50" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></svg>');
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    
+    .header-content {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+    }
+    
+    .header .subtitle {
+      font-size: 22px;
+      opacity: 0.95;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+    
+    .header .tagline {
+      font-size: 16px;
+      opacity: 0.85;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    /* Gallery Section */
+    #gallery {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+    
+    .section-title {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    
+    .section-title h2 {
+      font-size: 36px;
+      color: #654321;
+      margin-bottom: 15px;
+    }
+    
+    .section-title p {
+      font-size: 18px;
+      color: #6b5d4f;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      padding: 0 20px;
+    }
+    
+    @media (max-width: 1024px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 32px;
+      }
+    }
+    
+    .building-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(101, 67, 33, 0.15);
+      cursor: pointer;
+      transition: all 0.4s ease;
+      border: 2px solid #e8dcc4;
+    }
+    
+    .building-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 16px 40px rgba(101, 67, 33, 0.25);
+      border-color: #8b4513;
+    }
+    
+    .building-thumb {
+      width: 100%;
+      height: 260px;
+      background: linear-gradient(135deg, #d4c5a9 0%, #a89678 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .building-thumb::before {
+      content: '🏛️';
+      font-size: 80px;
+      opacity: 0.3;
+      position: absolute;
+    }
+    
+    .explore-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(139, 69, 19, 0.95);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .building-info {
+      padding: 25px;
+    }
+    
+    .building-name {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #654321;
+    }
+    
+    .building-year {
+      font-size: 14px;
+      color: #8b7355;
+      margin-bottom: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-style: italic;
+    }
+    
+    .building-desc {
+      font-size: 15px;
+      color: #5a4a3a;
+      line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    /* Viewer */
+    #viewer {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1410;
+      z-index: 1000;
+    }
+    
+    #viewer.active {
+      display: block;
+    }
+    
+    #viewer-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    
+    #viewer-info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(26, 20, 16, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 25px;
+      border-radius: 12px;
+      color: white;
+      z-index: 10;
+      max-width: 350px;
+      border: 2px solid rgba(139, 69, 19, 0.5);
+    }
+    
+    #viewer-info h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #f5d9a8;
+    }
+    
+    #viewer-info .year {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-style: italic;
+    }
+    
+    #viewer-info .controls {
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 15px;
+      margin-top: 15px;
+    }
+    
+    #viewer-info .controls h4 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #f5d9a8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #viewer-info .controls p {
+      font-size: 14px;
+      margin: 6px 0;
+      opacity: 0.9;
+      line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(139, 69, 19, 0.95);
+      border: 2px solid rgba(245, 217, 168, 0.5);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #back-button:hover {
+      background: rgba(139, 69, 19, 1);
+      transform: scale(1.05);
+    }
+    
+    #fps {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(26, 20, 16, 0.9);
+      padding: 10px 18px;
+      border-radius: 6px;
+      color: #51cf66;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: monospace;
+      z-index: 10;
+    }
+    
+    #spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 100;
+    }
+    
+    .spinner-icon {
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top: 4px solid #f5d9a8;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #message {
+      color: white;
+      font-size: 18px;
+    }
+    
+    #progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #8b4513, #654321);
+      z-index: 10;
+      transition: width 0.3s ease;
+    }
+    
+    /* Footer */
+    .footer {
+      background: #2c2416;
+      color: #d4c5a9;
+      text-align: center;
+      padding: 40px 20px;
+      margin-top: 60px;
+    }
+    
+    .footer p {
+      font-size: 14px;
+      opacity: 0.9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.6s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>Grand Forks Historic Building Digital Museum</h1>
+      <p class="subtitle">Preserving Heritage Through Technology</p>
+      <p class="tagline">Historic Preservation Initiative • 3D Gaussian Splatting Technology</p>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div id="gallery">
+    <div class="section-title">
+      <h2>Historic Building Collection</h2>
+      <p>Explore six iconic landmarks of Grand Forks through interactive 3D models</p>
+    </div>
+    
+    <div class="gallery-grid">
+      <div class="building-card fade-in" data-model="model1.splat" data-name="Historic Building 1" data-year="Est. 1890s" style="animation-delay: 0.1s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 1</div>
+          <div class="building-year">Est. 1890s</div>
+          <div class="building-desc">A remarkable example of late 19th-century architecture, featuring classic Victorian design elements.</div>
+        </div>
+      </div>
+      
+      <div class="building-card fade-in" data-model="model2.splat" data-name="Historic Building 2" data-year="Est. 1900s" style="animation-delay: 0.2s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 2</div>
+          <div class="building-year">Est. 1900s</div>
+          <div class="building-desc">An important commercial structure that shaped the early downtown development.</div>
+        </div>
+      </div>
+      
+      <div class="building-card fade-in" data-model="model3.splat" data-name="Historic Building 3" data-year="Est. 1910s" style="animation-delay: 0.3s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 3</div>
+          <div class="building-year">Est. 1910s</div>
+          <div class="building-desc">A beautiful example of early 20th-century civic architecture with neoclassical influences.</div>
+        </div>
+      </div>
+      
+      <div class="building-card fade-in" data-model="model4.splat" data-name="Historic Building 4" data-year="Est. 1920s" style="animation-delay: 0.4s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 4</div>
+          <div class="building-year">Est. 1920s</div>
+          <div class="building-desc">Art Deco masterpiece showcasing the prosperity and optimism of the Jazz Age.</div>
+        </div>
+      </div>
+      
+      <div class="building-card fade-in" data-model="model5.splat" data-name="Historic Building 5" data-year="Est. 1930s" style="animation-delay: 0.5s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 5</div>
+          <div class="building-year">Est. 1930s</div>
+          <div class="building-desc">Depression-era construction demonstrating resilient community spirit and craftsmanship.</div>
+        </div>
+      </div>
+      
+      <div class="building-card fade-in" data-model="model6.splat" data-name="Historic Building 6" data-year="Est. 1940s" style="animation-delay: 0.6s">
+        <div class="building-thumb">
+          <div class="explore-badge">🔍 Explore in 3D</div>
+        </div>
+        <div class="building-info">
+          <div class="building-name">Historic Building 6</div>
+          <div class="building-year">Est. 1940s</div>
+          <div class="building-desc">Post-war modernist structure representing Grand Forks' mid-century development.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Grand Forks Historic Preservation Initiative</p>
+    <p style="margin-top: 10px; opacity: 0.7;">Proposal for Digital Historic Building Museum Project</p>
+  </div>
+
+  <!-- 3D Viewer -->
+  <div id="viewer">
+    <button id="back-button">← Back to Gallery</button>
+    
+    <div id="viewer-info">
+      <h3 id="building-title">Historic Building</h3>
+      <div class="year" id="building-year">Est. 1900s</div>
+      <div class="controls">
+        <h4>🎮 Navigation</h4>
+        <p><strong>Left Click + Drag:</strong> Rotate view</p>
+        <p><strong>Right Click + Drag:</strong> Pan camera</p>
+        <p><strong>Scroll:</strong> Zoom in/out</p>
+        <p><strong>Arrow Keys:</strong> Move camera</p>
+      </div>
+    </div>
+    
+    <div id="fps">-- fps</div>
+    <div id="camid" style="display: none;"></div>
+    
+    <div id="spinner">
+      <div class="spinner-icon"></div>
+      <p id="message" style="color: white;">Loading 3D model...</p>
+    </div>
+    
+    <div id="progress" style="width: 0%;"></div>
+    
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script>
+    // Prevent main.js from loading immediately by setting URL param first
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // If no model specified, redirect to show gallery (prevent auto-load)
+    if (!urlParams.has('url')) {
+      // Set a dummy URL to prevent main.js from loading train.splat
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('url', 'none');
+      window.history.replaceState({}, '', newUrl);
+    }
+    
+    const gallery = document.getElementById('gallery');
+    const viewer = document.getElementById('viewer');
+    const backButton = document.getElementById('back-button');
+    const buildingCards = document.querySelectorAll('.building-card');
+    const buildingTitle = document.getElementById('building-title');
+    const buildingYear = document.getElementById('building-year');
+    
+    // Hide viewer initially if we're showing gallery
+    if (urlParams.get('url') === 'none' || !urlParams.has('url')) {
+      viewer.style.display = 'none';
+      document.getElementById('spinner').style.display = 'none';
+    }
+    
+    // Handle card clicks
+    buildingCards.forEach(card => {
+      card.addEventListener('click', function() {
+        const modelPath = this.dataset.model;
+        const name = this.dataset.name;
+        const year = this.dataset.year;
+        
+        buildingTitle.textContent = name;
+        buildingYear.textContent = year;
+        
+        // Set the URL parameter and reload
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('url', modelPath);
+        window.location.href = newUrl.toString();
+      });
+    });
+    
+    // Back button
+    backButton.addEventListener('click', function() {
+      // Remove URL param and go back to gallery
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('url', 'none');
+      window.location.href = newUrl.toString();
+    });
+    
+    // ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && viewer.classList.contains('active')) {
+        backButton.click();
+      }
+    });
+    
+    // Check if we should show viewer or gallery
+    window.addEventListener('DOMContentLoaded', function() {
+      const currentUrl = urlParams.get('url');
+      if (currentUrl && currentUrl !== 'none') {
+        // Show viewer
+        gallery.style.display = 'none';
+        viewer.classList.add('active');
+      } else {
+        // Show gallery
+        viewer.style.display = 'none';
+        gallery.style.display = 'block';
+      }
+    });
+  </script>
+  
+  <script src="main.js"></script>
+</body>
+</html>
