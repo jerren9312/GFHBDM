@@ -1,28 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>3DGS Splat Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Gaussian Splatting Viewer</title>
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
-    canvas { display: block; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+    }
+    
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 18px;
+      text-align: center;
+      z-index: 10;
+    }
+    
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      z-index: 5;
+    }
+    
+    #controls h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    #controls p {
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+    
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid #fff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <!-- include js -->
-  <script src="main.js"></script>
+  <div id="canvas-container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <p>Loading 3D Gaussian Splat...</p>
+    </div>
+    
+    <div id="controls">
+      <h3>Controls</h3>
+      <p>🖱️ Left Click + Drag: Rotate</p>
+      <p>🖱️ Right Click + Drag: Pan</p>
+      <p>🖱️ Scroll: Zoom</p>
+    </div>
+  </div>
+
+  <script src="https://rawcdn.githack.com/antimatter15/splat/main/main.js"></script>
   <script>
-    // viewer
-    const viewer = new SPLAT.Viewer();
-    document.body.appendChild(viewer.renderer.domElement);
-
-    viewer.loadSplat("model1.splat");
-
+    const loadingDiv = document.getElementById('loading');
+    const canvasContainer = document.getElementById('canvas-container');
+    
+    // 初始化 SPLAT Viewer
+    const viewer = new SPLAT.Viewer({
+      canvas: document.createElement('canvas'),
+      fps: 60
+    });
+    
+    // 将 canvas 添加到容器
+    canvasContainer.appendChild(viewer.canvas);
+    
+    // 加载 splat 文件
+    viewer.loadFile('model1.splat')
+      .then(() => {
+        console.log('Splat model loaded successfully');
+        loadingDiv.style.display = 'none';
+      })
+      .catch((error) => {
+        console.error('Error loading splat:', error);
+        loadingDiv.innerHTML = '<p style="color: #ff6b6b;">Error loading model. Please check the file path.</p>';
+      });
+    
+    // 渲染循环
     function animate() {
       requestAnimationFrame(animate);
+      viewer.update();
       viewer.render();
     }
+    
     animate();
+    
+    // 处理窗口大小变化
+    window.addEventListener('resize', () => {
+      viewer.resize();
+    });
   </script>
 </body>
 </html>
