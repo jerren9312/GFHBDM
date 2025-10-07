@@ -17,16 +17,11 @@
       overflow: hidden;
     }
     
-    #container {
-      width: 100%;
-      height: 100vh;
-      position: relative;
-    }
-    
-    canvas {
+    #canvas {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
     }
     
     #info {
@@ -39,7 +34,7 @@
       border-radius: 12px;
       color: white;
       z-index: 10;
-      max-width: 300px;
+      max-width: 320px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     
@@ -56,22 +51,35 @@
       line-height: 1.6;
     }
     
-    #status {
+    #fps, #camid {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #51cf66;
+      font-size: 16px;
+      font-weight: 600;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    
+    #camid {
+      top: 70px;
+    }
+    
+    #spinner {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
-      color: white;
-      background: rgba(0,0,0,0.95);
-      padding: 40px 50px;
-      border-radius: 16px;
       z-index: 100;
-      min-width: 400px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
     }
     
-    .spinner {
+    .spinner-icon {
       border: 4px solid rgba(255,255,255,0.2);
       border-top: 4px solid #51cf66;
       border-radius: 50%;
@@ -86,257 +94,86 @@
       100% { transform: rotate(360deg); }
     }
     
-    .error {
-      color: #ff6b6b;
-      background: rgba(255,107,107,0.1);
-      border: 2px solid #ff6b6b;
-      padding: 25px;
-      border-radius: 12px;
-      line-height: 1.8;
-    }
-    
-    .error h3 {
-      margin-bottom: 15px;
-      font-size: 20px;
-    }
-    
-    .error ol {
-      text-align: left;
-      margin: 15px 0;
-      padding-left: 20px;
-    }
-    
-    .error li {
-      margin: 8px 0;
-      font-size: 14px;
-    }
-    
-    .error code {
-      background: rgba(0,0,0,0.3);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 13px;
-    }
-    
-    button {
-      margin-top: 20px;
-      padding: 12px 30px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    #message {
       color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: transform 0.2s;
+      font-size: 18px;
+      text-align: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      padding: 40px;
+      border-radius: 16px;
+      z-index: 101;
+      max-width: 500px;
     }
     
-    button:hover {
-      transform: scale(1.05);
+    #progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #51cf66, #40c057);
+      z-index: 10;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px #51cf66;
     }
     
-    .success {
-      color: #51cf66;
+    #drop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      color: white;
+      font-size: 24px;
+      text-align: center;
+      pointer-events: none;
+    }
+    
+    #drop-overlay.active {
+      display: flex;
     }
   </style>
 </head>
 <body>
-  <div id="container"></div>
+  <canvas id="canvas"></canvas>
   
   <div id="info">
     <h2>🎮 Controls</h2>
-    <p><strong>Left Click + Drag:</strong> Rotate</p>
-    <p><strong>Right Click + Drag:</strong> Pan</p>
-    <p><strong>Scroll:</strong> Zoom</p>
+    <p><strong>Mouse Drag:</strong> Rotate view</p>
+    <p><strong>Right Click Drag:</strong> Pan</p>
+    <p><strong>Scroll / Ctrl+Scroll:</strong> Zoom</p>
+    <p><strong>Arrow Keys:</strong> Move camera</p>
+    <p><strong>WASD:</strong> Rotate view</p>
     <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; opacity: 0.7;">
       Drop .splat or .ply file to load
     </p>
   </div>
   
-  <div id="status">
-    <div class="spinner"></div>
-    <p style="font-size: 18px; margin-bottom: 5px;">Loading Viewer...</p>
-    <p style="font-size: 13px; opacity: 0.6;">Please wait</p>
+  <div id="fps">-- fps</div>
+  <div id="camid"></div>
+  
+  <div id="spinner">
+    <div class="spinner-icon"></div>
+    <p style="color: white; font-size: 16px;">Loading model...</p>
+  </div>
+  
+  <div id="message" style="display: none;"></div>
+  <div id="progress" style="width: 0%;"></div>
+  <div id="drop-overlay">
+    <div>
+      <div style="font-size: 64px; margin-bottom: 20px;">📦</div>
+      <div>Drop your .splat or .ply file here</div>
+    </div>
   </div>
 
-  <!-- Load local main.js -->
   <script src="main.js"></script>
-  
-  <script>
-    const container = document.getElementById('container');
-    const statusDiv = document.getElementById('status');
-    
-    function log(msg) {
-      console.log(`[Viewer] ${msg}`);
-    }
-    
-    log('Checking for SPLAT library...');
-    
-    let checkAttempts = 0;
-    const maxAttempts = 20;
-    
-    function checkLibrary() {
-      checkAttempts++;
-      
-      if (typeof SPLAT !== 'undefined') {
-        log('✓ SPLAT library loaded from local file');
-        initViewer();
-      } else if (checkAttempts < maxAttempts) {
-        setTimeout(checkLibrary, 200);
-      } else {
-        log('✗ SPLAT library not found');
-        statusDiv.innerHTML = `
-          <div class="error">
-            <h3>❌ Library Not Found</h3>
-            <p style="margin: 15px 0;">Cannot find <code>main.js</code> file.</p>
-            <p style="font-size: 14px; line-height: 1.8;">
-              <strong>Please follow these steps:</strong>
-            </p>
-            <ol>
-              <li>Download <code>main.js</code> from:<br>
-                  <a href="https://github.com/antimatter15/splat/blob/main/main.js" 
-                     target="_blank" 
-                     style="color: #51cf66;">
-                     github.com/antimatter15/splat
-                  </a>
-              </li>
-              <li>Click the "Raw" button on GitHub</li>
-              <li>Save the file as <code>main.js</code></li>
-              <li>Upload it to your repository root folder:<br>
-                  <code>your-repo/main.js</code>
-              </li>
-              <li>Make sure it's in the same folder as <code>index.html</code></li>
-            </ol>
-            <button onclick="location.reload()">
-              Retry After Upload
-            </button>
-          </div>
-        `;
-      }
-    }
-    
-    function initViewer() {
-      try {
-        log('Creating viewer instance...');
-        
-        const viewer = new SPLAT.Viewer({
-          canvas: document.createElement('canvas'),
-          fps: 60
-        });
-        
-        container.appendChild(viewer.canvas);
-        log('✓ Viewer created successfully');
-        
-        // Animation loop
-        function animate() {
-          requestAnimationFrame(animate);
-          viewer.update();
-          viewer.render();
-        }
-        animate();
-        
-        // Try to load model1.splat
-        log('Checking for model1.splat...');
-        fetch('model1.splat', { method: 'HEAD' })
-          .then(res => {
-            if (res.ok) {
-              log('✓ Found model1.splat, loading...');
-              loadModel(viewer, 'model1.splat');
-            } else {
-              log('model1.splat not found');
-              statusDiv.innerHTML = `
-                <div style="color: white; padding: 30px;">
-                  <h3 style="color: #ffd43b; margin-bottom: 15px;">⚠️ No Model Found</h3>
-                  <p style="margin: 15px 0; line-height: 1.6;">
-                    Viewer is ready, but <code>model1.splat</code> was not found.
-                  </p>
-                  <p style="font-size: 14px; opacity: 0.8;">
-                    Drag and drop a <strong>.splat</strong> or <strong>.ply</strong> file here to view it.
-                  </p>
-                  <button onclick="document.getElementById('status').style.display='none'">
-                    OK
-                  </button>
-                </div>
-              `;
-            }
-          })
-          .catch(err => {
-            log('Error checking model1.splat: ' + err.message);
-            statusDiv.style.display = 'none';
-          });
-        
-        // Drag and drop support
-        container.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          container.style.opacity = '0.5';
-        });
-        
-        container.addEventListener('dragleave', (e) => {
-          e.preventDefault();
-          container.style.opacity = '1';
-        });
-        
-        container.addEventListener('drop', (e) => {
-          e.preventDefault();
-          container.style.opacity = '1';
-          
-          const file = e.dataTransfer.files[0];
-          if (file && (file.name.endsWith('.splat') || file.name.endsWith('.ply'))) {
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `
-              <div class="spinner"></div>
-              <p style="font-size: 18px;">Loading ${file.name}...</p>
-            `;
-            log('Loading dropped file: ' + file.name);
-            const url = URL.createObjectURL(file);
-            loadModel(viewer, url);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-          }
-        });
-        
-        // Window resize
-        window.addEventListener('resize', () => {
-          viewer.resize();
-        });
-        
-      } catch (error) {
-        log('✗ Error: ' + error.message);
-        statusDiv.innerHTML = `
-          <div class="error">
-            <h3>❌ Viewer Error</h3>
-            <p>${error.message}</p>
-            <button onclick="location.reload()">Retry</button>
-          </div>
-        `;
-      }
-    }
-    
-    function loadModel(viewer, url) {
-      log('Loading model: ' + url);
-      
-      viewer.loadFile(url)
-        .then(() => {
-          log('✓ Model loaded successfully!');
-          statusDiv.style.display = 'none';
-        })
-        .catch(error => {
-          log('✗ Failed to load model: ' + error.message);
-          statusDiv.innerHTML = `
-            <div class="error">
-              <h3>❌ Load Failed</h3>
-              <p style="margin: 15px 0;">${error.message}</p>
-              <p style="font-size: 13px; opacity: 0.8;">
-                Make sure the file is a valid .splat format
-              </p>
-              <button onclick="location.reload()">Retry</button>
-            </div>
-          `;
-        });
-    }
-    
-    // Start checking for library
-    checkLibrary();
-  </script>
 </body>
 </html>
