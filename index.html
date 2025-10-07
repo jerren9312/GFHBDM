@@ -11,14 +11,14 @@
 <body>
   <script src="https://antimatter15.com/splat/splat.js"></script>
   <script>
-    // 初始化 viewer
+    // viewer
     const viewer = new SPLAT.Viewer();
     document.body.appendChild(viewer.renderer.domElement);
 
-    // 加载你的 splat 文件
-    viewer.loadSplat("model.splat");
+    //load
+    viewer.loadSplat("model1.splat");
 
-    // 动画循环
+    // ana
     function animate() {
       requestAnimationFrame(animate);
       viewer.render();
