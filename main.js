@@ -744,9 +744,8 @@ async function main() {
         carousel = false;
     } catch (err) {}
 
-    // 🔥 修改这里：从本地加载，不拼接 HuggingFace
     const modelFile = params.get("url") || "model1.splat";
-    const url = modelFile; // 相对路径，直接用本地文件
+    const url = modelFile;
 
     const req = await fetch(url);
     if (req.status != 200)
@@ -754,11 +753,26 @@ async function main() {
 
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
     const reader = req.body.getReader();
-    let splatData = new Uint8Array(req.headers.get("content-length"));
+
+    // 🔥 改动点：不要一次性分配 content-length，而是用 chunk 方式收集
+    let chunks = [];
+    let totalLength = 0;
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        totalLength += value.length;
+    }
+    let splatData = new Uint8Array(totalLength);
+    let offset = 0;
+    for (let chunk of chunks) {
+        splatData.set(chunk, offset);
+        offset += chunk.length;
+    }
 
     const downsample =
         splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
-    console.log(splatData.length / rowLength, downsample);
+    console.log("vertices:", splatData.length / rowLength, "downsample:", downsample);
 
     const worker = new Worker(
         URL.createObjectURL(
@@ -767,7 +781,6 @@ async function main() {
             }),
         ),
     );
-
     const canvas = document.getElementById("canvas");
     const fps = document.getElementById("fps");
     const camid = document.getElementById("camid");
