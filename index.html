@@ -108,7 +108,7 @@
       margin-top: 20px;
     }
     
-    #view-button:hover {
+    #view-button:hover:not(:disabled) {
       transform: scale(1.05);
     }
     
@@ -248,6 +248,8 @@
     <div id="viewer-canvas"></div>
   </div>
 
+  <script src="https://rawcdn.githack.com/antimatter15/splat/main/main.js"></script>
+  
   <script>
     const debugLog = document.getElementById('debug-log');
     const statusBadge = document.getElementById('status-badge');
@@ -259,6 +261,8 @@
     
     let splatViewer = null;
     let animationId = null;
+    let checkAttempts = 0;
+    const maxAttempts = 30;
     
     function addDebugLine(message, type = 'info') {
       const line = document.createElement('div');
@@ -274,24 +278,31 @@
     
     addDebugLine('Page loaded');
     addDebugLine('Current URL: ' + window.location.href);
+    addDebugLine('Loading SPLAT library from: rawcdn.githack.com');
     
-    // Check library
     function checkLibrary() {
-      addDebugLine('Checking SPLAT library...');
+      checkAttempts++;
+      addDebugLine(`Checking SPLAT library... (attempt ${checkAttempts}/${maxAttempts})`);
+      
       if (typeof SPLAT !== 'undefined') {
         addDebugLine('✓ SPLAT library loaded successfully', 'success');
         statusBadge.textContent = '✓ Ready';
         statusBadge.className = 'status success';
+        checkFile();
         return true;
       } else {
-        addDebugLine('✗ SPLAT library not found', 'error');
-        statusBadge.textContent = '✗ Library Error';
-        statusBadge.className = 'status error';
+        if (checkAttempts >= maxAttempts) {
+          addDebugLine('✗ SPLAT library failed to load after multiple attempts', 'error');
+          addDebugLine('This might be a CDN issue. Try refreshing the page.', 'error');
+          statusBadge.textContent = '✗ Library Error';
+          statusBadge.className = 'status error';
+          return false;
+        }
+        setTimeout(checkLibrary, 500);
         return false;
       }
     }
     
-    // Check file
     async function checkFile() {
       addDebugLine('Checking model1.splat...');
       try {
@@ -299,38 +310,18 @@
         if (response.ok) {
           const size = response.headers.get('content-length');
           addDebugLine(`✓ model1.splat found (${size ? Math.round(size/1024/1024*100)/100 + ' MB' : 'size unknown'})`, 'success');
-          return true;
+          viewButton.disabled = false;
+          addDebugLine('✓ All checks passed! Ready to view', 'success');
         } else {
           addDebugLine(`✗ model1.splat not found (Status: ${response.status})`, 'error');
           addDebugLine('Make sure model1.splat is in the same folder as index.html', 'error');
-          return false;
         }
       } catch (error) {
         addDebugLine('✗ Cannot access model1.splat: ' + error.message, 'error');
-        return false;
+        addDebugLine('File may not exist or CORS issue', 'error');
       }
     }
     
-    // Initialize
-    async function initialize() {
-      const libOk = checkLibrary();
-      if (!libOk) {
-        addDebugLine('Waiting for library to load...');
-        setTimeout(initialize, 500);
-        return;
-      }
-      
-      const fileOk = await checkFile();
-      
-      if (libOk && fileOk) {
-        viewButton.disabled = false;
-        addDebugLine('✓ All checks passed! Ready to view', 'success');
-      } else {
-        addDebugLine('Please fix the errors above', 'error');
-      }
-    }
-    
-    // View button
     viewButton.addEventListener('click', function() {
       addDebugLine('Opening 3D viewer...');
       document.querySelector('.container').style.display = 'none';
@@ -389,10 +380,8 @@
       }
     });
     
-    // Start checking
-    setTimeout(initialize, 1000);
+    // Start checking after script loads
+    setTimeout(checkLibrary, 500);
   </script>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@antimatter15/splat@latest/build/main.js" onerror="console.error('Failed to load SPLAT library from CDN')"></script>
 </body>
 </html>
