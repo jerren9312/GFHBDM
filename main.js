@@ -184,15 +184,6 @@ function getViewMatrix(camera) {
     ].flat();
     return camToWorld;
 }
-// function translate4(a, x, y, z) {
-//     return [
-//         ...a.slice(0, 12),
-//         a[0] * x + a[4] * y + a[8] * z + a[12],
-//         a[1] * x + a[5] * y + a[9] * z + a[13],
-//         a[2] * x + a[6] * y + a[10] * z + a[14],
-//         a[3] * x + a[7] * y + a[11] * z + a[15],
-//     ];
-// }
 
 function multiply4(a, b) {
     return [
@@ -299,11 +290,6 @@ function createWorker(self) {
     let buffer;
     let vertexCount = 0;
     let viewProj;
-    // 6*4 + 4 + 4 = 8*4
-    // XYZ - Position (Float32)
-    // XYZ - Scale (Float32)
-    // RGBA - colors (uint8)
-    // IJKL - quaternion/rot (uint8)
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
     let lastProj = [];
     let depthIndex = new Uint32Array();
@@ -350,29 +336,22 @@ function createWorker(self) {
         const f_buffer = new Float32Array(buffer);
         const u_buffer = new Uint8Array(buffer);
 
-        var texwidth = 1024 * 2; // Set to your desired width
-        var texheight = Math.ceil((2 * vertexCount) / texwidth); // Set to your desired height
-        var texdata = new Uint32Array(texwidth * texheight * 4); // 4 components per pixel (RGBA)
+        var texwidth = 1024 * 2;
+        var texheight = Math.ceil((2 * vertexCount) / texwidth);
+        var texdata = new Uint32Array(texwidth * texheight * 4);
         var texdata_c = new Uint8Array(texdata.buffer);
         var texdata_f = new Float32Array(texdata.buffer);
 
-        // Here we convert from a .splat file buffer into a texture
-        // With a little bit more foresight perhaps this texture file
-        // should have been the native format as it'd be very easy to
-        // load it into webgl.
         for (let i = 0; i < vertexCount; i++) {
-            // x, y, z
             texdata_f[8 * i + 0] = f_buffer[8 * i + 0];
             texdata_f[8 * i + 1] = f_buffer[8 * i + 1];
             texdata_f[8 * i + 2] = f_buffer[8 * i + 2];
 
-            // r, g, b, a
             texdata_c[4 * (8 * i + 7) + 0] = u_buffer[32 * i + 24 + 0];
             texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
             texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
             texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
 
-            // quaternions
             let scale = [
                 f_buffer[8 * i + 3 + 0],
                 f_buffer[8 * i + 3 + 1],
@@ -385,7 +364,6 @@ function createWorker(self) {
                 (u_buffer[32 * i + 28 + 3] - 128) / 128,
             ];
 
-            // Compute the matrix product of S and R (M = S * R)
             const M = [
                 1.0 - 2.0 * (rot[2] * rot[2] + rot[3] * rot[3]),
                 2.0 * (rot[1] * rot[2] + rot[0] * rot[3]),
@@ -449,7 +427,6 @@ function createWorker(self) {
             if (depth < minDepth) minDepth = depth;
         }
 
-        // This is a 16 bit single-pass counting sort
         let depthInv = (256 * 256 - 1) / (maxDepth - minDepth);
         let counts0 = new Uint32Array(256 * 256);
         for (let i = 0; i < vertexCount; i++) {
@@ -473,7 +450,6 @@ function createWorker(self) {
 
     function processPlyBuffer(inputBuffer) {
         const ubuf = new Uint8Array(inputBuffer);
-        // 10KB ought to be enough for a header...
         const header = new TextDecoder().decode(ubuf.slice(0, 1024 * 10));
         const header_end = "end_header\n";
         const header_end_index = header.indexOf(header_end);
@@ -542,11 +518,6 @@ function createWorker(self) {
         sizeIndex.sort((b, a) => sizeList[a] - sizeList[b]);
         console.timeEnd("sort");
 
-        // 6*4 + 4 + 4 = 8*4
-        // XYZ - Position (Float32)
-        // XYZ - Scale (Float32)
-        // RGBA - colors (uint8)
-        // IJKL - quaternion/rot (uint8)
         const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
         const buffer = new ArrayBuffer(rowLength * vertexCount);
 
@@ -736,6 +707,7 @@ let defaultViewMatrix = [
     0.03, 6.55, 1,
 ];
 let viewMatrix = defaultViewMatrix;
+
 async function main() {
     let carousel = true;
     const params = new URLSearchParams(location.search);
@@ -754,7 +726,7 @@ async function main() {
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
     const reader = req.body.getReader();
 
-    // 🔥 改动点：不要一次性分配 content-length，而是用 chunk 方式收集
+    // Collect data using chunks
     let chunks = [];
     let totalLength = 0;
     while (true) {
@@ -812,9 +784,8 @@ async function main() {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS))
         console.error(gl.getProgramInfoLog(program));
 
-    gl.disable(gl.DEPTH_TEST); // Disable depth testing
+    gl.disable(gl.DEPTH_TEST);
 
-    // Enable blending
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(
         gl.ONE_MINUS_DST_ALPHA,
@@ -829,7 +800,6 @@ async function main() {
     const u_focal = gl.getUniformLocation(program, "focal");
     const u_view = gl.getUniformLocation(program, "view");
 
-    // positions
     const triangleVertices = new Float32Array([-2, -2, 2, -2, 2, 2, -2, 2]);
     const vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -889,7 +859,6 @@ async function main() {
             }
         } else if (e.data.texdata) {
             const { texdata, texwidth, texheight } = e.data;
-            // console.log(texdata)
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texParameteri(
                 gl.TEXTURE_2D,
@@ -929,7 +898,6 @@ async function main() {
     let currentCameraIndex = 0;
 
     window.addEventListener("keydown", (e) => {
-        // if (document.activeElement != document.body) return;
         carousel = false;
         if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
         if (/\d/.test(e.key)) {
@@ -987,16 +955,12 @@ async function main() {
                     0,
                 );
             } else if (e.ctrlKey || e.metaKey) {
-                // inv = rotate4(inv,  (e.deltaX * scale) / innerWidth,  0, 0, 1);
-                // inv = translate4(inv,  0, (e.deltaY * scale) / innerHeight, 0);
-                // let preY = inv[13];
                 inv = translate4(
                     inv,
                     0,
                     0,
                     (-10 * (e.deltaY * scale)) / innerHeight,
                 );
-                // inv[13] = preY;
             } else {
                 let d = 4;
                 inv = translate4(inv, 0, 0, d);
@@ -1038,24 +1002,19 @@ async function main() {
             inv = rotate4(inv, dx, 0, 1, 0);
             inv = rotate4(inv, -dy, 1, 0, 0);
             inv = translate4(inv, 0, 0, -d);
-            // let postAngle = Math.atan2(inv[0], inv[10])
-            // inv = rotate4(inv, postAngle - preAngle, 0, 0, 1)
-            // console.log(postAngle)
+
             viewMatrix = invert4(inv);
 
             startX = e.clientX;
             startY = e.clientY;
         } else if (down == 2) {
             let inv = invert4(viewMatrix);
-            // inv = rotateY(inv, );
-            // let preY = inv[13];
             inv = translate4(
                 inv,
                 (-10 * (e.clientX - startX)) / innerWidth,
                 0,
                 (10 * (e.clientY - startY)) / innerHeight,
             );
-            // inv[13] = preY;
             viewMatrix = invert4(inv);
 
             startX = e.clientX;
@@ -1081,7 +1040,6 @@ async function main() {
                 startY = e.touches[0].clientY;
                 down = 1;
             } else if (e.touches.length === 2) {
-                // console.log('beep')
                 carousel = false;
                 startX = e.touches[0].clientX;
                 altX = e.touches[1].clientX;
@@ -1103,8 +1061,6 @@ async function main() {
 
                 let d = 4;
                 inv = translate4(inv, 0, 0, d);
-                // inv = translate4(inv,  -x, -y, -z);
-                // inv = translate4(inv,  x, y, z);
                 inv = rotate4(inv, dx, 0, 1, 0);
                 inv = rotate4(inv, -dy, 1, 0, 0);
                 inv = translate4(inv, 0, 0, -d);
@@ -1114,7 +1070,6 @@ async function main() {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
-                // alert('beep')
                 const dtheta =
                     Math.atan2(startY - altY, startX - altX) -
                     Math.atan2(
@@ -1138,14 +1093,9 @@ async function main() {
                         (startY + altY)) /
                     2;
                 let inv = invert4(viewMatrix);
-                // inv = translate4(inv,  0, 0, d);
                 inv = rotate4(inv, dtheta, 0, 0, 1);
-
                 inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0);
-
-                // let preY = inv[13];
                 inv = translate4(inv, 0, 0, 3 * (1 - dscale));
-                // inv[13] = preY;
 
                 viewMatrix = invert4(inv);
 
@@ -1210,10 +1160,8 @@ async function main() {
         }
         if (activeKeys.includes("ArrowLeft"))
             inv = translate4(inv, -0.03, 0, 0);
-        //
         if (activeKeys.includes("ArrowRight"))
             inv = translate4(inv, 0.03, 0, 0);
-        // inv = rotate4(inv, 0.01, 0, 1, 0);
         if (activeKeys.includes("KeyA")) inv = rotate4(inv, -0.01, 0, 1, 0);
         if (activeKeys.includes("KeyD")) inv = rotate4(inv, 0.01, 0, 1, 0);
         if (activeKeys.includes("KeyQ")) inv = rotate4(inv, 0.01, 0, 0, 1);
@@ -1226,11 +1174,10 @@ async function main() {
         for (let gamepad of gamepads) {
             if (!gamepad) continue;
 
-            const axisThreshold = 0.1; // Threshold to detect when the axis is intentionally moved
+            const axisThreshold = 0.1;
             const moveSpeed = 0.06;
             const rotateSpeed = 0.02;
 
-            // Assuming the left stick controls translation (axes 0 and 1)
             if (Math.abs(gamepad.axes[0]) > axisThreshold) {
                 inv = translate4(inv, moveSpeed * gamepad.axes[0], 0, 0);
                 carousel = false;
@@ -1263,7 +1210,6 @@ async function main() {
                 carousel = false;
             }
 
-            // Assuming the right stick controls rotation (axes 2 and 3)
             if (Math.abs(gamepad.axes[2]) > axisThreshold) {
                 inv = rotate4(inv, rotateSpeed * gamepad.axes[2], 0, 1, 0);
                 carousel = false;
@@ -1419,7 +1365,6 @@ async function main() {
                 console.log("Loaded", Math.floor(splatData.length / rowLength));
 
                 if (isPly(splatData)) {
-                    // ply file magic header means it should be handled differently
                     worker.postMessage({ ply: splatData.buffer, save: true });
                 } else {
                     worker.postMessage({
@@ -1452,37 +1397,16 @@ async function main() {
         selectFile(e.dataTransfer.files[0]);
     });
 
-    let bytesRead = 0;
-    let lastVertexCount = -1;
     let stopLoading = false;
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done || stopLoading) break;
-
-        splatData.set(value, bytesRead);
-        bytesRead += value.length;
-
-        if (vertexCount > lastVertexCount) {
-            if (!isPly(splatData)) {
-                worker.postMessage({
-                    buffer: splatData.buffer,
-                    vertexCount: Math.floor(bytesRead / rowLength),
-                });
-            }
-            lastVertexCount = vertexCount;
-        }
-    }
-    if (!stopLoading) {
-        if (isPly(splatData)) {
-            // ply file magic header means it should be handled differently
-            worker.postMessage({ ply: splatData.buffer, save: false });
-        } else {
-            worker.postMessage({
-                buffer: splatData.buffer,
-                vertexCount: Math.floor(bytesRead / rowLength),
-            });
-        }
+    // Data already loaded via chunks above, now process it
+    if (isPly(splatData)) {
+        worker.postMessage({ ply: splatData.buffer, save: false });
+    } else {
+        worker.postMessage({
+            buffer: splatData.buffer,
+            vertexCount: Math.floor(splatData.length / rowLength),
+        });
     }
 }
 
