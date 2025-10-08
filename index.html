@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grand Forks Historic Building Museum</title>
+  <title>Grand Forks Historic Building Digital Museum</title>
   <style>
     * {
       margin: 0;
@@ -89,7 +89,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(20px);
       border: 2px solid rgba(255, 255, 255, 0.15);
       border-radius: 30px;
@@ -385,12 +385,12 @@
   </style>
 </head>
 <body>
-  <!-- 全屏3D画布 - 使用原来main.js期望的ID -->
+  <!-- 全屏3D画布 -->
   <canvas id="canvas"></canvas>
   
   <!-- 顶部导航 -->
   <div class="top-nav">
-    <div class="logo">Grand Forks Historic Building Museum</div>
+    <div class="logo">Grand Forks Historic Building Digital Museum</div>
     <div class="nav-buttons">
       <button class="nav-btn" id="auto-rotate-btn" onclick="toggleAutoRotate()">🔄 Auto Rotate</button>
       <button class="nav-btn" id="controls-btn" onclick="toggleControls()">🎮 Controls</button>
@@ -402,7 +402,7 @@
   <!-- FPS计数器 -->
   <div id="fps">-- fps</div>
   
-  <!-- 隐藏的camid元素（main.js可能需要） -->
+  <!-- 隐藏的camid元素 -->
   <div id="camid"></div>
   
   <!-- 中央信息卡片 -->
@@ -427,65 +427,17 @@
   
   <!-- 控制说明 -->
   <div class="controls-hint">
-    <h4>🎮 Controls</h4>
-    <p><strong>Mouse Drag:</strong> Rotate view</p>
-    <p><strong>Right Click:</strong> Pan camera</p>
-    <p><strong>Scroll:</strong> Zoom</p>
-    <p><strong>← →:</strong> Switch buildings</p>
-  </div>
-  
-  <!-- 摄像机控制面板 -->
-  <div class="camera-controls">
-    <h4>📹 Camera Controls</h4>
-    
-    <div class="control-section">
-      <div class="control-label">Pan (平移)</div>
-      <div class="control-grid">
-        <div></div>
-        <button class="control-btn" onclick="panCamera(0, 1)">↑</button>
-        <div></div>
-        <button class="control-btn" onclick="panCamera(-1, 0)">←</button>
-        <button class="control-btn" onclick="resetCamera()">⌂</button>
-        <button class="control-btn" onclick="panCamera(1, 0)">→</button>
-        <div></div>
-        <button class="control-btn" onclick="panCamera(0, -1)">↓</button>
-        <div></div>
-      </div>
-    </div>
-    
-    <div class="control-divider"></div>
-    
-    <div class="control-section">
-      <div class="control-label">Rotate (旋转)</div>
-      <div class="control-grid">
-        <button class="control-btn" onclick="rotateCamera(-15, 0)">↶</button>
-        <button class="control-btn" onclick="rotateCamera(0, 15)">⤴</button>
-        <button class="control-btn" onclick="rotateCamera(15, 0)">↷</button>
-        <div></div>
-        <button class="control-btn" onclick="rotateCamera(0, -15)">⤵</button>
-        <div></div>
-      </div>
-    </div>
-    
-    <div class="control-section">
-      <div class="control-label">Zoom (缩放)</div>
-      <div class="control-grid">
-        <button class="control-btn" onclick="zoomCamera(-0.5)">➖</button>
-        <button class="control-btn" onclick="resetZoom()">⊙</button>
-        <button class="control-btn" onclick="zoomCamera(0.5)">➕</button>
-      </div>
-    </div>
-    
-    <div class="control-divider"></div>
-    
-    <div class="control-section">
-      <div class="control-label">Auto Rotate (自动旋转)</div>
-      <div class="control-grid vertical">
-        <button class="control-btn" id="auto-rotate-btn" onclick="toggleAutoRotate()">
-          ▶️ Start Auto Rotate
-        </button>
-      </div>
-    </div>
+    <h4>🎮 Navigation Controls</h4>
+    <p><strong>Left Click + Drag:</strong> Rotate view</p>
+    <p><strong>Right Click + Drag:</strong> Pan camera</p>
+    <p><strong>Ctrl+Mouse Wheel:</strong> Zoom in/out</p>
+    <p><strong>← → ↑ ↓:</strong> Move camera</p>
+    <p><strong>A/D:</strong> Rotate left/right</p>
+    <p><strong>W/S:</strong> Tilt up/down</p>
+    <p><strong>Q/E:</strong> Roll camera</p>
+    <p><strong>Space:</strong> Jump effect</p>
+    <p><strong>P Key:</strong> Auto-rotate</p>
+    <p><strong>V Key:</strong> Save view to URL</p>
   </div>
   
   <!-- 加载动画 -->
@@ -498,41 +450,23 @@
   <div id="progress" style="width: 0%;"></div>
 
   <script>
-    // CORS代理函数 - 可以选择不同的代理服务
+    // CORS代理函数
     function getCorsProxyUrl(url) {
-      // 如果是本地文件，直接返回
-      if (!url.startsWith('http')) {
-        return url;
-      }
-      
-      // Hugging Face 链接不需要代理，原生支持CORS
-      if (url.includes('huggingface.co')) {
-        return url;
-      }
-      
-      // 如果已经是代理URL，直接返回
-      if (url.includes('corsproxy.io')) {
-        return url;
-      }
-      
-      // 其他链接使用 corsproxy.io 代理
+      if (!url.startsWith('http')) return url;
+      if (url.includes('huggingface.co')) return url;
+      if (url.includes('corsproxy.io')) return url;
       return 'https://corsproxy.io/?' + encodeURIComponent(url);
-      
-      // 备选代理（如果上面的不工作，可以切换到这些）:
-      // return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-      // return 'https://cors-anywhere.herokuapp.com/' + url;
     }
     
     // 建筑数据
     const buildings = [
       {
-        model: 'model1.splat',  // 本地文件
+        model: 'model1.splat',
         name: 'Historic Building 1',
         year: 'Est. 1890s',
         description: 'A remarkable example of late 19th-century architecture, featuring classic Victorian design elements.'
       },
       {
-        // Hugging Face 链接 - 注意使用 resolve 而不是 blob
         model: 'https://huggingface.co/datasets/jerren9312/GFHBDM/resolve/main/model2.splat',
         name: 'Historic Building 2',
         year: 'Est. 1900s',
@@ -568,7 +502,6 @@
     let infoCardVisible = true;
     let controlsVisible = false;
     
-    // 初始化进度点
     function initProgressDots() {
       const dotsContainer = document.getElementById('progress-dots');
       buildings.forEach((_, index) => {
@@ -580,7 +513,6 @@
       });
     }
     
-    // 更新信息卡片
     function updateInfoCard() {
       const building = buildings[currentIndex];
       document.getElementById('building-number').textContent = `BUILDING ${String(currentIndex + 1).padStart(2, '0')}/${String(buildings.length).padStart(2, '0')}`;
@@ -588,40 +520,31 @@
       document.getElementById('building-year').textContent = building.year;
       document.getElementById('building-description').textContent = building.description;
       
-      // 更新进度点
       document.querySelectorAll('.dot').forEach((dot, index) => {
         dot.classList.toggle('active', index === currentIndex);
       });
     }
     
-    // 切换到指定建筑
     function switchToBuilding(index) {
       if (index === currentIndex) return;
       currentIndex = index;
       const building = buildings[currentIndex];
-      
-      // 使用CORS代理URL
       const modelUrl = getCorsProxyUrl(building.model);
-      
-      // 更新URL参数并重新加载
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('url', modelUrl);
       window.location.href = newUrl.toString();
     }
     
-    // 上一个建筑
     function previousBuilding() {
       const newIndex = (currentIndex - 1 + buildings.length) % buildings.length;
       switchToBuilding(newIndex);
     }
     
-    // 下一个建筑
     function nextBuilding() {
       const newIndex = (currentIndex + 1) % buildings.length;
       switchToBuilding(newIndex);
     }
     
-    // 隐藏信息卡片
     function hideInfoCard() {
       const card = document.getElementById('info-card');
       const infoBtn = document.getElementById('info-btn');
@@ -633,14 +556,12 @@
       }, 500);
     }
     
-    // 显示信息
     function showInfo() {
       const card = document.getElementById('info-card');
       const infoBtn = document.getElementById('info-btn');
       
       if (infoCardVisible) {
         hideInfoCard();
-        infoBtn.classList.remove('active');
       } else {
         card.style.display = 'block';
         card.classList.remove('fade-out');
@@ -650,7 +571,6 @@
       }
     }
     
-    // 切换控制说明显示/隐藏
     function toggleControls() {
       const controls = document.querySelector('.controls-hint');
       const controlsBtn = document.getElementById('controls-btn');
@@ -666,11 +586,8 @@
       }
     }
     
-    // 切换自动旋转 - 通过模拟按键P
     function toggleAutoRotate() {
       const btn = document.getElementById('auto-rotate-btn');
-      
-      // 模拟按下P键来触发main.js的carousel功能
       const keyEvent = new KeyboardEvent('keydown', {
         key: 'P',
         code: 'KeyP',
@@ -680,17 +597,10 @@
       });
       document.dispatchEvent(keyEvent);
       
-      // 切换按钮样式
       btn.classList.toggle('active');
-      
-      if (btn.classList.contains('active')) {
-        btn.innerHTML = '⏸️ Pause Rotation';
-      } else {
-        btn.innerHTML = '🔄 Auto Rotate';
-      }
+      btn.innerHTML = btn.classList.contains('active') ? '⏸️ Pause Rotation' : '🔄 Auto Rotate';
     }
     
-    // 全屏切换
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -699,9 +609,7 @@
       }
     }
     
-    // 键盘控制
     document.addEventListener('keydown', (e) => {
-      // 左右箭头切换建筑
       if (e.key === 'ArrowLeft' && (e.shiftKey || e.ctrlKey)) {
         previousBuilding();
       } else if (e.key === 'ArrowRight' && (e.shiftKey || e.ctrlKey)) {
@@ -713,29 +621,22 @@
       } else if (e.key === 'c' || e.key === 'C') {
         toggleControls();
       } else if (e.key === 'p' || e.key === 'P') {
-        // P键按下时更新按钮状态
         const btn = document.getElementById('auto-rotate-btn');
         btn.classList.add('active');
         btn.innerHTML = '⏸️ Pause Rotation';
       }
-      // 注意: 其他按键(方向键、WASD等)由main.js处理
     });
     
-    // 初始化
     window.addEventListener('DOMContentLoaded', () => {
       initProgressDots();
       
-      // 检查URL参数，确定当前显示哪个建筑
       const urlParams = new URLSearchParams(window.location.search);
       const currentModel = urlParams.get('url');
       
       if (currentModel) {
         const index = buildings.findIndex(b => b.model === currentModel || getCorsProxyUrl(b.model) === currentModel);
-        if (index !== -1) {
-          currentIndex = index;
-        }
+        if (index !== -1) currentIndex = index;
       } else {
-        // 如果没有URL参数，加载第一个建筑
         const modelUrl = getCorsProxyUrl(buildings[0].model);
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('url', modelUrl);
@@ -744,16 +645,12 @@
       
       updateInfoCard();
       
-      // 延长自动隐藏时间到8秒，并且给用户提示
       setTimeout(() => {
-        if (infoCardVisible) {
-          hideInfoCard();
-        }
+        if (infoCardVisible) hideInfoCard();
       }, 8000);
     });
   </script>
   
-  <!-- 加载main.js - 放在最后以确保DOM已准备好 -->
   <script src="main.js"></script>
 </body>
 </html>
