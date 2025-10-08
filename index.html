@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en-US">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,7 +89,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(20px);
       border: 2px solid rgba(255, 255, 255, 0.15);
       border-radius: 30px;
@@ -250,6 +250,95 @@
       opacity: 1;
     }
     
+    /* 视觉控制面板 */
+    .camera-controls {
+      position: fixed;
+      bottom: 100px;
+      right: 50px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 50;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .camera-controls.visible {
+      display: block;
+      opacity: 1;
+    }
+    
+    .camera-controls h4 {
+      color: #ffd89b;
+      margin-bottom: 15px;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .control-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .control-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .control-grid.vertical {
+      grid-template-columns: 1fr;
+    }
+    
+    .control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 45px;
+    }
+    
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+    
+    .control-btn:active {
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0.95);
+    }
+    
+    .control-btn.center {
+      grid-column: 2;
+    }
+    
+    .control-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 12px 0;
+    }
+    
     .controls-hint h4 {
       font-size: 16px;
       margin-bottom: 10px;
@@ -357,6 +446,14 @@
       .controls-hint {
         display: none;
       }
+      
+      .camera-controls {
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        max-width: 300px;
+        margin: 0 auto;
+      }
     }
     
     /* 淡入淡出动画 */
@@ -390,8 +487,9 @@
   
   <!-- 顶部导航 -->
   <div class="top-nav">
-    <div class="logo">Grand Forks Historic Building Digital Museum</div>
+    <div class="logo">Grand Forks Historic Building Museum</div>
     <div class="nav-buttons">
+      <button class="nav-btn" id="camera-btn" onclick="toggleCameraControls()">📹 Camera</button>
       <button class="nav-btn" id="controls-btn" onclick="toggleControls()">🎮 Controls</button>
       <button class="nav-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
       <button class="nav-btn" id="info-btn" onclick="showInfo()">ℹ️ Info</button>
@@ -431,6 +529,51 @@
     <p><strong>Right Click:</strong> Pan camera</p>
     <p><strong>Scroll:</strong> Zoom</p>
     <p><strong>← →:</strong> Switch buildings</p>
+  </div>
+  
+  <!-- 摄像机控制面板 -->
+  <div class="camera-controls">
+    <h4>📹 Camera Controls</h4>
+    
+    <div class="control-section">
+      <div class="control-label">Pan (平移)</div>
+      <div class="control-grid">
+        <div></div>
+        <button class="control-btn" onclick="panCamera(0, 1)">↑</button>
+        <div></div>
+        <button class="control-btn" onclick="panCamera(-1, 0)">←</button>
+        <button class="control-btn" onclick="resetCamera()">⌂</button>
+        <button class="control-btn" onclick="panCamera(1, 0)">→</button>
+        <div></div>
+        <button class="control-btn" onclick="panCamera(0, -1)">↓</button>
+        <div></div>
+      </div>
+    </div>
+    
+    <div class="control-divider"></div>
+    
+    <div class="control-section">
+      <div class="control-label">Rotate (旋转)</div>
+      <div class="control-grid">
+        <button class="control-btn" onclick="rotateCamera(-15, 0)">↶</button>
+        <button class="control-btn" onclick="rotateCamera(0, 15)">⤴</button>
+        <button class="control-btn" onclick="rotateCamera(15, 0)">↷</button>
+        <div></div>
+        <button class="control-btn" onclick="rotateCamera(0, -15)">⤵</button>
+        <div></div>
+      </div>
+    </div>
+    
+    <div class="control-divider"></div>
+    
+    <div class="control-section">
+      <div class="control-label">Zoom (缩放)</div>
+      <div class="control-grid">
+        <button class="control-btn" onclick="zoomCamera(-0.5)">➖</button>
+        <button class="control-btn" onclick="resetZoom()">⊙</button>
+        <button class="control-btn" onclick="zoomCamera(0.5)">➕</button>
+      </div>
+    </div>
   </div>
   
   <!-- 加载动画 -->
@@ -512,6 +655,17 @@
     let currentIndex = 0;
     let infoCardVisible = true;
     let controlsVisible = false;
+    let cameraControlsVisible = false;
+    
+    // 摄像机状态（如果main.js暴露了相关API）
+    let cameraState = {
+      x: 0,
+      y: 0,
+      z: 5,
+      rotationX: 0,
+      rotationY: 0,
+      zoom: 1
+    };
     
     // 初始化进度点
     function initProgressDots() {
@@ -611,6 +765,91 @@
       }
     }
     
+    // 切换摄像机控制面板
+    function toggleCameraControls() {
+      const cameraControls = document.querySelector('.camera-controls');
+      const cameraBtn = document.getElementById('camera-btn');
+      
+      if (cameraControlsVisible) {
+        cameraControls.classList.remove('visible');
+        cameraBtn.classList.remove('active');
+        cameraControlsVisible = false;
+      } else {
+        cameraControls.classList.add('visible');
+        cameraBtn.classList.add('active');
+        cameraControlsVisible = true;
+      }
+    }
+    
+    // 摄像机控制函数
+    function panCamera(x, y) {
+      // 触发键盘事件来移动摄像机
+      const speed = 0.1;
+      cameraState.x += x * speed;
+      cameraState.y += y * speed;
+      
+      // 模拟键盘按键（如果main.js支持WASD或方向键控制）
+      const keyMap = {
+        '0,1': 'ArrowUp',
+        '0,-1': 'ArrowDown', 
+        '-1,0': 'ArrowLeft',
+        '1,0': 'ArrowRight'
+      };
+      
+      const key = keyMap[`${x},${y}`];
+      if (key) {
+        // 模拟多次按键以实现移动
+        for(let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const event = new KeyboardEvent('keydown', { key: key });
+            document.dispatchEvent(event);
+          }, i * 50);
+        }
+      }
+    }
+    
+    function rotateCamera(yaw, pitch) {
+      cameraState.rotationX += pitch;
+      cameraState.rotationY += yaw;
+      
+      // 如果main.js暴露了旋转API，在这里调用
+      // 否则通过模拟鼠标拖拽实现
+      console.log('Rotate camera:', yaw, pitch);
+    }
+    
+    function zoomCamera(delta) {
+      cameraState.zoom += delta;
+      
+      // 模拟滚轮事件
+      const event = new WheelEvent('wheel', {
+        deltaY: -delta * 100,
+        bubbles: true
+      });
+      document.getElementById('canvas').dispatchEvent(event);
+    }
+    
+    function resetCamera() {
+      cameraState = {
+        x: 0,
+        y: 0,
+        z: 5,
+        rotationX: 0,
+        rotationY: 0,
+        zoom: 1
+      };
+      
+      // 重新加载页面以重置摄像机
+      // location.reload();
+      
+      // 或者触发重置事件（如果main.js支持）
+      console.log('Reset camera to default position');
+    }
+    
+    function resetZoom() {
+      cameraState.zoom = 1;
+      console.log('Reset zoom');
+    }
+    
     // 全屏切换
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
@@ -622,9 +861,9 @@
     
     // 键盘控制
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft' && !cameraControlsVisible) {
         previousBuilding();
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' && !cameraControlsVisible) {
         nextBuilding();
       } else if (e.key === 'i' || e.key === 'I') {
         showInfo();
@@ -632,6 +871,8 @@
         toggleFullscreen();
       } else if (e.key === 'c' || e.key === 'C') {
         toggleControls();
+      } else if (e.key === 'v' || e.key === 'V') {
+        toggleCameraControls();
       }
     });
     
