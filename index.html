@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -76,6 +76,11 @@
     .nav-btn:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: translateY(-2px);
+    }
+    
+    .nav-btn.active {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.4);
     }
     
     /* 中央信息卡片 */
@@ -227,7 +232,7 @@
       position: fixed;
       bottom: 100px;
       left: 50px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(10px);
       padding: 20px 25px;
       border-radius: 15px;
@@ -236,6 +241,13 @@
       font-size: 14px;
       line-height: 1.8;
       display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .controls-hint.visible {
+      display: block;
+      opacity: 1;
     }
     
     .controls-hint h4 {
@@ -378,10 +390,11 @@
   
   <!-- 顶部导航 -->
   <div class="top-nav">
-    <div class="logo">Grand Forks Historic Building Digital Museum</div>
+    <div class="logo">GF Museum</div>
     <div class="nav-buttons">
+      <button class="nav-btn" id="controls-btn" onclick="toggleControls()">🎮 Controls</button>
       <button class="nav-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
-      <button class="nav-btn" onclick="showInfo()">ℹ️ Info</button>
+      <button class="nav-btn" id="info-btn" onclick="showInfo()">ℹ️ Info</button>
     </div>
   </div>
   
@@ -430,15 +443,41 @@
   <div id="progress" style="width: 0%;"></div>
 
   <script>
+    // CORS代理函数 - 可以选择不同的代理服务
+    function getCorsProxyUrl(url) {
+      // 如果是本地文件，直接返回
+      if (!url.startsWith('http')) {
+        return url;
+      }
+      
+      // Hugging Face 链接不需要代理，原生支持CORS
+      if (url.includes('huggingface.co')) {
+        return url;
+      }
+      
+      // 如果已经是代理URL，直接返回
+      if (url.includes('corsproxy.io')) {
+        return url;
+      }
+      
+      // 其他链接使用 corsproxy.io 代理
+      return 'https://corsproxy.io/?' + encodeURIComponent(url);
+      
+      // 备选代理（如果上面的不工作，可以切换到这些）:
+      // return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+      // return 'https://cors-anywhere.herokuapp.com/' + url;
+    }
+    
     // 建筑数据
     const buildings = [
       {
-        model: 'model1.splat',
+        model: 'model1.splat',  // 本地文件
         name: 'Historic Building 1',
         year: 'Est. 1890s',
         description: 'A remarkable example of late 19th-century architecture, featuring classic Victorian design elements.'
       },
       {
+        // Hugging Face 链接 - 注意使用 resolve 而不是 blob
         model: 'https://huggingface.co/datasets/jerren9312/GFHBDM/resolve/main/model2.splat',
         name: 'Historic Building 2',
         year: 'Est. 1900s',
@@ -472,6 +511,7 @@
     
     let currentIndex = 0;
     let infoCardVisible = true;
+    let controlsVisible = false;
     
     // 初始化进度点
     function initProgressDots() {
@@ -505,9 +545,12 @@
       currentIndex = index;
       const building = buildings[currentIndex];
       
+      // 使用CORS代理URL
+      const modelUrl = getCorsProxyUrl(building.model);
+      
       // 更新URL参数并重新加载
       const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('url', building.model);
+      newUrl.searchParams.set('url', modelUrl);
       window.location.href = newUrl.toString();
     }
     
@@ -526,7 +569,9 @@
     // 隐藏信息卡片
     function hideInfoCard() {
       const card = document.getElementById('info-card');
+      const infoBtn = document.getElementById('info-btn');
       card.classList.add('fade-out');
+      infoBtn.classList.remove('active');
       setTimeout(() => {
         card.style.display = 'none';
         infoCardVisible = false;
@@ -536,13 +581,33 @@
     // 显示信息
     function showInfo() {
       const card = document.getElementById('info-card');
+      const infoBtn = document.getElementById('info-btn');
+      
       if (infoCardVisible) {
         hideInfoCard();
+        infoBtn.classList.remove('active');
       } else {
         card.style.display = 'block';
         card.classList.remove('fade-out');
         card.classList.add('fade-in');
+        infoBtn.classList.add('active');
         infoCardVisible = true;
+      }
+    }
+    
+    // 切换控制说明显示/隐藏
+    function toggleControls() {
+      const controls = document.querySelector('.controls-hint');
+      const controlsBtn = document.getElementById('controls-btn');
+      
+      if (controlsVisible) {
+        controls.classList.remove('visible');
+        controlsBtn.classList.remove('active');
+        controlsVisible = false;
+      } else {
+        controls.classList.add('visible');
+        controlsBtn.classList.add('active');
+        controlsVisible = true;
       }
     }
     
@@ -565,6 +630,8 @@
         showInfo();
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
+      } else if (e.key === 'c' || e.key === 'C') {
+        toggleControls();
       }
     });
     
@@ -577,25 +644,26 @@
       const currentModel = urlParams.get('url');
       
       if (currentModel) {
-        const index = buildings.findIndex(b => b.model === currentModel);
+        const index = buildings.findIndex(b => b.model === currentModel || getCorsProxyUrl(b.model) === currentModel);
         if (index !== -1) {
           currentIndex = index;
         }
       } else {
         // 如果没有URL参数，加载第一个建筑
+        const modelUrl = getCorsProxyUrl(buildings[0].model);
         const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('url', buildings[0].model);
+        newUrl.searchParams.set('url', modelUrl);
         window.history.replaceState({}, '', newUrl);
       }
       
       updateInfoCard();
       
-      // 5秒后自动隐藏信息卡片
+      // 延长自动隐藏时间到8秒，并且给用户提示
       setTimeout(() => {
         if (infoCardVisible) {
           hideInfoCard();
         }
-      }, 5000);
+      }, 8000);
     });
   </script>
   
