@@ -29,6 +29,19 @@
       display: block;
       touch-action: none;
     }
+
+    /* 捐赠按钮特殊样式 */
+    .nav-btn.donate-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-color: rgba(255, 255, 255, 0.3);
+      font-weight: 600;
+      box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    }
+    
+    .nav-btn.donate-btn:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
+    }
     
     /* 顶部导航栏 */
     .top-nav {
@@ -396,6 +409,7 @@
       <button class="nav-btn" id="controls-btn" onclick="toggleControls()">🎮 Controls</button>
       <button class="nav-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
       <button class="nav-btn" id="info-btn" onclick="showInfo()">ℹ️ Info</button>
+      <button class="nav-btn donate-btn" onclick="goToDonation()">❤️ Donate</button>
     </div>
   </div>
   
@@ -584,6 +598,11 @@
         controlsBtn.classList.add('active');
         controlsVisible = true;
       }
+    }
+
+    // 跳转到捐赠页面
+    function goToDonation() {
+      window.location.href = 'donation.html';
     }
     
     function toggleAutoRotate() {
