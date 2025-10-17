@@ -713,7 +713,7 @@ async function main() {
         carousel = false;
     } catch (err) {}
 
-    const modelFile = params.get("url") || "model1.splat";
+    const modelFile = params.get("url") || "https://huggingface.co/datasets/jerren9312/GFHBDM/resolve/main/model4.splat";
     const url = modelFile;
 
     const req = await fetch(url);
